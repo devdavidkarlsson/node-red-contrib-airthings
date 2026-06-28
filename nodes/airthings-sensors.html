@@ -54,8 +54,17 @@
     <h3>Outputs</h3>
     <dl class="message-properties">
         <dt>payload <span class="property-type">object</span></dt>
-        <dd>API response with <code>results</code> (array of per-device sensor readings), <code>hasNext</code>, and <code>totalPages</code>.</dd>
+        <dd>A flat object keyed by serial number. Each entry has <code>sensors</code> (key/value pairs), <code>recorded</code>, and <code>batteryPercentage</code>.</dd>
     </dl>
-    <p>Each entry in <code>results</code> contains <code>serialNumber</code>, <code>recorded</code>, <code>batteryPercentage</code>,
-    and a <code>sensors</code> array of <code>{ sensorType, value, unit }</code> objects.</p>
+    <p>Example output:</p>
+    <pre>{
+  "2930001150": {
+    "sensors": { "co2": 642, "temp": 27.4, "humidity": 51 },
+    "recorded": "2026-06-28T17:42:50",
+    "batteryPercentage": 100
+  },
+  "2960000310": { "error": "API error (504)..." }
+}</pre>
+    <p>Use a <b>Switch</b> node on <code>msg.payload["YOUR_SN"].sensors.temp</code> to route on a specific sensor value.
+    Devices that fail individually are included with an <code>error</code> key rather than stopping the whole fetch.</p>
 </script>
