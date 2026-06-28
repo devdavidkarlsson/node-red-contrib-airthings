@@ -10,7 +10,7 @@
 
 ---
 
-> **Your air quality data. Your automations. Zero cloud dependency.**
+> **Your air quality data. Your automations. Fully wired into Node-RED.**
 
 Node-RED nodes for the [Airthings Consumer API](https://consumer-api-doc.airthings.com/) — poll sensor readings from your Airthings devices and control the Renew air purifier directly from your flows.
 
