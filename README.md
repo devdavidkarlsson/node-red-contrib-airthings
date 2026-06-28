@@ -54,7 +54,7 @@ All nodes take any input message as a trigger. Sensor data and device state are 
 
 ### airthings-sensors
 
-Fetches the latest readings from one or more devices.
+Fetches the latest readings from your Airthings devices. Select which devices to include using the checkboxes in the node editor (all checked = fetch all). Each device is queried individually so a single unresponsive device won't block the rest.
 
 **Inputs**
 
@@ -62,26 +62,30 @@ Fetches the latest readings from one or more devices.
 |----------|------|-------------|
 | `payload` | any | Triggers a fetch |
 | `unit` _(optional)_ | string | `"metric"` (default) or `"imperial"` |
-| `serialNumbers` _(optional)_ | string[] | Filter to specific devices; overrides node setting |
+| `serialNumbers` _(optional)_ | string[] | Override the node's device selection at runtime |
 
-**Output** — `msg.payload`:
+**Output** — `msg.payload` is a flat object keyed by serial number:
 ```json
 {
-  "results": [
-    {
-      "serialNumber": "4200012345",
-      "recorded": "2025-01-15T08:00:00Z",
-      "batteryPercentage": 82,
-      "sensors": [
-        { "sensorType": "co2", "value": 612, "unit": "ppm" },
-        { "sensorType": "humidity", "value": 43, "unit": "%" },
-        { "sensorType": "pm25", "value": 3.1, "unit": "µg/m³" }
-      ]
-    }
-  ],
-  "hasNext": false,
-  "totalPages": 1
+  "2930001150": {
+    "sensors": { "co2": 642, "temp": 27.4, "humidity": 51, "voc": 105, "pressure": 1010 },
+    "recorded": "2026-06-28T17:42:50",
+    "batteryPercentage": 100
+  },
+  "4100000915": {
+    "sensors": { "pm25": 3.0 },
+    "recorded": "2026-06-28T17:50:32",
+    "batteryPercentage": null
+  },
+  "2930024040": { "error": "API error (504)..." }
 }
+```
+
+Devices that fail individually appear with an `error` key — the rest still populate normally. To act on a specific sensor value in a downstream Switch or Function node:
+
+```javascript
+msg.payload["2930001150"].sensors.temp  // → 27.4
+msg.payload["4100000915"].sensors.pm25  // → 3.0
 ```
 
 ### airthings-devices
@@ -105,9 +109,9 @@ Lists all devices on the account, including their sensor capabilities. Useful fo
 
 ### airthings-renew-get
 
-Gets the last reported mode of a **Renew (AP_1)** air purifier.
+Gets the last reported mode of a **Renew (AP_1)** air purifier. Select your Renew device from the dropdown in the node editor (only AP_1 devices are shown).
 
-**Input** — set `msg.serialNumber` to override the node's configured serial number.
+**Input** — set `msg.serialNumber` at runtime to override the node's selected device.
 
 **Output** — `msg.payload`:
 ```json
@@ -117,13 +121,13 @@ Gets the last reported mode of a **Renew (AP_1)** air purifier.
 
 ### airthings-renew-set
 
-Sets the operational mode of a **Renew (AP_1)** air purifier. The command is forwarded asynchronously — use **airthings-renew-get** to confirm the device has applied it.
+Sets the operational mode of a **Renew (AP_1)** air purifier. Select your device from the dropdown in the node editor. The command is forwarded asynchronously — use **airthings-renew-get** to confirm the device has applied it.
 
 **Input** — `msg.payload` can be:
 - A mode string: `"AUTO"`, `"OFF"`, `"SLEEP"`, `"BOOST"`, or `"MANUAL"`
 - An object: `{ "mode": "MANUAL", "fanSpeed": 3 }` (fanSpeed 1–5 required for MANUAL)
 
-Set `msg.serialNumber` to override the node's configured serial number.
+Set `msg.serialNumber` at runtime to override the node's selected device.
 
 | Mode | Description |
 |------|-------------|
@@ -138,13 +142,23 @@ Set `msg.serialNumber` to override the node's configured serial number.
 { "mode": "MANUAL", "fanSpeed": 3 }
 ```
 
-## Example flow
+## Example: boost the Renew when it's too warm
 
-```json
-[{"id":"inject1","type":"inject","z":"flow1","name":"Poll every 5 min","repeat":"300","once":true,"wires":[["sensors1"]]},{"id":"sensors1","type":"airthings-sensors","z":"flow1","name":"","configNode":"config1","unit":"metric","serialNumbers":"","wires":[["debug1"]]},{"id":"debug1","type":"debug","z":"flow1","name":"Sensor data","active":true,"wires":[]},{"id":"config1","type":"airthings-config","name":"Airthings"}]
+Wire up: **inject (every 5 min) → airthings-sensors → function → airthings-renew-set**
+
+In the **Function** node:
+
+```javascript
+const sn = "2960000310"; // Tv Cabinet VIEW_PLUS · 2960000310
+const temp = msg.payload[sn]?.sensors?.temp;
+
+if (temp === undefined) return null; // device didn't respond — do nothing
+
+msg.payload = temp > 20 ? { mode: "BOOST" } : { mode: "AUTO" };
+return msg;
 ```
 
-Import this into Node-RED via **Menu → Import**, then open the config node to enter your credentials.
+`return null` drops the message silently if the sensor didn't respond, so the Renew is never touched on a bad reading. Swap the serial number for whichever of your devices has a temperature sensor.
 
 ## Requirements
 
