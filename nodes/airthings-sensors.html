@@ -16,50 +16,61 @@
         },
         paletteLabel: 'sensors',
         oneditprepare: function() {
-            const node = this;
-            const currentSNs = (node.serialNumbers || '').split(',').map(s => s.trim()).filter(Boolean);
+            var node = this;
+            var currentSNs = (node.serialNumbers || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+
+            function authHeaders() {
+                var tokens = RED.settings.get('auth-tokens');
+                return tokens ? { 'Authorization': 'Bearer ' + tokens.access_token } : {};
+            }
 
             function loadDevices() {
-                const configId = $('#node-input-configNode').val();
+                var configId = $('#node-input-configNode').val();
                 if (!configId || configId === '_ADD_') {
-                    $('#airthings-device-list').html('<span style="color:#aaa;font-size:0.9em">Select a config node first</span>');
+                    $('#airthings-device-list').html('<span style="color:#aaa;font-size:0.9em">Select a config node first.</span>');
                     return;
                 }
                 $('#airthings-device-list').html('<span style="color:#aaa;font-size:0.9em">Loading devices...</span>');
-                $.getJSON('/airthings/devices?configId=' + configId)
-                    .done(function(data) {
+                $.ajax({
+                    url: '/airthings/devices?configId=' + encodeURIComponent(configId),
+                    type: 'GET',
+                    headers: authHeaders(),
+                    success: function(data) {
                         var container = $('#airthings-device-list');
                         container.empty();
                         if (!data.devices || data.devices.length === 0) {
-                            container.html('<span style="color:#aaa;font-size:0.9em">No devices found</span>');
+                            container.html('<span style="color:#aaa;font-size:0.9em">No devices found.</span>');
                             return;
                         }
                         data.devices.forEach(function(device) {
                             var checked = (currentSNs.length === 0 || currentSNs.indexOf(device.serialNumber) !== -1) ? 'checked' : '';
-                            var label = device.name + ' <span style="color:#aaa;font-size:0.85em">' + device.type + ' &middot; ' + device.serialNumber + '</span>';
                             container.append(
-                                '<div style="margin-bottom:4px">' +
+                                '<div style="margin-bottom:5px">' +
                                 '<input type="checkbox" class="airthings-device-cb" id="atcb-' + device.serialNumber + '" value="' + device.serialNumber + '" ' + checked + '>' +
-                                '<label for="atcb-' + device.serialNumber + '" style="width:auto;margin-left:6px;font-weight:normal">' + label + '</label>' +
-                                '</div>'
+                                '<label for="atcb-' + device.serialNumber + '" style="width:auto;margin-left:6px;font-weight:normal">' +
+                                device.name + ' <span style="color:#aaa;font-size:0.85em">' + device.type + ' &middot; ' + device.serialNumber + '</span>' +
+                                '</label></div>'
                             );
                         });
-                    })
-                    .fail(function() {
-                        $('#airthings-device-list').html('<span style="color:#c00;font-size:0.9em">Could not load devices — check credentials in the config node</span>');
-                    });
+                    },
+                    error: function(xhr) {
+                        $('#airthings-device-list').html(
+                            '<span style="color:#c00;font-size:0.9em">Could not load devices (HTTP ' + xhr.status + '). Check credentials in the config node.</span>' +
+                            ' <a href="#" id="airthings-retry">Retry</a>'
+                        );
+                        $('#airthings-retry').on('click', function(e){ e.preventDefault(); loadDevices(); });
+                    }
+                });
             }
 
-            loadDevices();
+            // Small delay to let the config node select widget initialise
+            setTimeout(loadDevices, 100);
             $('#node-input-configNode').on('change', loadDevices);
         },
         oneditsave: function() {
             var checked = [];
             var total = $('.airthings-device-cb').length;
-            $('.airthings-device-cb:checked').each(function() {
-                checked.push($(this).val());
-            });
-            // blank = all devices; only store specific SNs when not all are selected
+            $('.airthings-device-cb:checked').each(function() { checked.push($(this).val()); });
             $('#node-input-serialNumbers').val(checked.length === total ? '' : checked.join(','));
         },
     });
@@ -113,5 +124,5 @@
   "2960000310": { "error": "API error (504)..." }
 }</pre>
     <p>Use a <b>Switch</b> node on <code>msg.payload["YOUR_SN"].sensors.temp</code> to route based on a specific sensor value.
-    Devices that fail individually are included with an <code>error</code> key rather than stopping the whole fetch.</p>
+    Devices that fail individually appear with an <code>error</code> key rather than stopping the whole fetch.</p>
 </script>
