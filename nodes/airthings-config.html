@@ -13,43 +13,60 @@
             return this.name || 'Airthings';
         },
         oneditprepare: function() {
+            var configNodeId = this.id;
             $('#airthings-test-btn').on('click', function() {
                 var btn = $(this);
                 var status = $('#airthings-test-status');
                 var clientId = $('#node-config-input-clientId').val();
                 var clientSecret = $('#node-config-input-clientSecret').val();
-
-                if (!clientId || !clientSecret) {
-                    status.css('color', '#c00').text('Enter Client ID and Client Secret first.');
-                    return;
-                }
-
-                btn.prop('disabled', true);
-                status.css('color', '#aaa').text('Testing...');
+                var nodeId = configNodeId;
 
                 var tokens = RED.settings.get('auth-tokens');
                 var authHeader = tokens ? { 'Authorization': 'Bearer ' + tokens.access_token } : {};
 
-                $.ajax({
-                    url: '/airthings/test-credentials',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    headers: authHeader,
-                    data: JSON.stringify({ clientId: clientId, clientSecret: clientSecret }),
-                    success: function(result) {
-                        if (result.ok) {
-                            status.css('color', '#009900').text('✓ Credentials valid — token acquired successfully.');
-                        } else {
-                            status.css('color', '#c00').text('✗ ' + result.error);
-                        }
-                    },
-                    error: function(xhr) {
-                        status.css('color', '#c00').text('✗ Request failed: ' + xhr.status);
-                    },
-                    complete: function() {
-                        btn.prop('disabled', false);
+                btn.prop('disabled', true);
+                status.css('color', '#aaa').text('Testing...');
+
+                function handleResult(result) {
+                    if (result.ok) {
+                        status.css('color', '#009900').text('✓ Token acquired successfully.');
+                    } else {
+                        status.css('color', '#c00').text('✗ ' + result.error);
                     }
-                });
+                    btn.prop('disabled', false);
+                }
+
+                // If the secret field is empty, the node is already saved — test via the deployed node
+                if (!clientSecret && nodeId) {
+                    $.ajax({
+                        url: '/airthings/test-node?configId=' + encodeURIComponent(nodeId),
+                        type: 'GET',
+                        headers: authHeader,
+                        success: handleResult,
+                        error: function(xhr) {
+                            status.css('color', '#c00').text('✗ Request failed: ' + xhr.status);
+                            btn.prop('disabled', false);
+                        }
+                    });
+                } else {
+                    if (!clientId || !clientSecret) {
+                        status.css('color', '#c00').text('Enter Client ID and Client Secret first.');
+                        btn.prop('disabled', false);
+                        return;
+                    }
+                    $.ajax({
+                        url: '/airthings/test-credentials',
+                        method: 'POST',
+                        contentType: 'application/json',
+                        headers: authHeader,
+                        data: JSON.stringify({ clientId: clientId, clientSecret: clientSecret }),
+                        success: handleResult,
+                        error: function(xhr) {
+                            status.css('color', '#c00').text('✗ Request failed: ' + xhr.status);
+                            btn.prop('disabled', false);
+                        }
+                    });
+                }
             });
         },
     });

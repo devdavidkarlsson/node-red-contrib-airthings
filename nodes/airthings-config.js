@@ -3,7 +3,21 @@
 const AirthingsAPI = require('../lib/airthings-api');
 
 module.exports = function(RED) {
-    // Test credentials without needing a deployed node — used by the config editor "Test" button
+    // Test via a deployed config node (used when editing an existing node — secret not in browser)
+    RED.httpAdmin.get('/airthings/test-node', RED.auth.needsPermission('flows.read'), async (req, res) => {
+        const configNode = RED.nodes.getNode(req.query.configId);
+        if (!configNode || !configNode.api) {
+            return res.json({ ok: false, error: 'Config node not found or has no credentials' });
+        }
+        try {
+            await configNode.api._getToken();
+            res.json({ ok: true });
+        } catch (err) {
+            res.json({ ok: false, error: err.message });
+        }
+    });
+
+    // Test with raw credentials (used when adding a new config node)
     RED.httpAdmin.post('/airthings/test-credentials', RED.auth.needsPermission('flows.write'), async (req, res) => {
         const { clientId, clientSecret } = req.body;
         if (!clientId || !clientSecret) {
