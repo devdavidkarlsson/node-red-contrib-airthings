@@ -1,6 +1,20 @@
 # node-red-contrib-airthings
 
-Node-RED nodes for the [Airthings Consumer API](https://consumer-api-doc.airthings.com/) — poll air quality sensor readings and control the Renew air purifier, all from your Node-RED flows.
+> **Your air quality data. Your automations. Zero cloud dependency.**
+
+Node-RED nodes for the [Airthings Consumer API](https://consumer-api-doc.airthings.com/) — poll sensor readings from your Airthings devices and control the Renew air purifier directly from your flows.
+
+---
+
+## See it in action
+
+**Poll temperature → boost the purifier when air quality drops. Confirm the state before and after.**
+
+![Flow example: sensor polling triggers Renew boost mode based on temperature](assets/flow-example.png)
+
+The flow above reads sensor data on a schedule, runs it through a function node that checks temperature, sets the Renew to BOOST or AUTO accordingly, then confirms the new state with a get-state node — all in a handful of wires.
+
+---
 
 ## Nodes
 
