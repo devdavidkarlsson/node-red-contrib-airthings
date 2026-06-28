@@ -1,6 +1,20 @@
 'use strict';
 
 module.exports = function(RED) {
+    // Admin endpoint so the editor can fetch the device list for the checkbox UI
+    RED.httpAdmin.get('/airthings/devices', RED.auth.needsPermission('flows.read'), async (req, res) => {
+        const configNode = RED.nodes.getNode(req.query.configId);
+        if (!configNode || !configNode.api) {
+            return res.status(404).json({ error: 'Config node not found or not configured' });
+        }
+        try {
+            const data = await configNode.api.getDevices();
+            res.json(data);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     function AirthingsSensorsNode(config) {
         RED.nodes.createNode(this, config);
         const node = this;

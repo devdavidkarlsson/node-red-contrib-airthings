@@ -15,6 +15,53 @@
             return this.name || 'airthings sensors';
         },
         paletteLabel: 'sensors',
+        oneditprepare: function() {
+            const node = this;
+            const currentSNs = (node.serialNumbers || '').split(',').map(s => s.trim()).filter(Boolean);
+
+            function loadDevices() {
+                const configId = $('#node-input-configNode').val();
+                if (!configId || configId === '_ADD_') {
+                    $('#airthings-device-list').html('<span style="color:#aaa;font-size:0.9em">Select a config node first</span>');
+                    return;
+                }
+                $('#airthings-device-list').html('<span style="color:#aaa;font-size:0.9em">Loading devices...</span>');
+                $.getJSON('/airthings/devices?configId=' + configId)
+                    .done(function(data) {
+                        var container = $('#airthings-device-list');
+                        container.empty();
+                        if (!data.devices || data.devices.length === 0) {
+                            container.html('<span style="color:#aaa;font-size:0.9em">No devices found</span>');
+                            return;
+                        }
+                        data.devices.forEach(function(device) {
+                            var checked = (currentSNs.length === 0 || currentSNs.indexOf(device.serialNumber) !== -1) ? 'checked' : '';
+                            var label = device.name + ' <span style="color:#aaa;font-size:0.85em">' + device.type + ' &middot; ' + device.serialNumber + '</span>';
+                            container.append(
+                                '<div style="margin-bottom:4px">' +
+                                '<input type="checkbox" class="airthings-device-cb" id="atcb-' + device.serialNumber + '" value="' + device.serialNumber + '" ' + checked + '>' +
+                                '<label for="atcb-' + device.serialNumber + '" style="width:auto;margin-left:6px;font-weight:normal">' + label + '</label>' +
+                                '</div>'
+                            );
+                        });
+                    })
+                    .fail(function() {
+                        $('#airthings-device-list').html('<span style="color:#c00;font-size:0.9em">Could not load devices — check credentials in the config node</span>');
+                    });
+            }
+
+            loadDevices();
+            $('#node-input-configNode').on('change', loadDevices);
+        },
+        oneditsave: function() {
+            var checked = [];
+            var total = $('.airthings-device-cb').length;
+            $('.airthings-device-cb:checked').each(function() {
+                checked.push($(this).val());
+            });
+            // blank = all devices; only store specific SNs when not all are selected
+            $('#node-input-serialNumbers').val(checked.length === total ? '' : checked.join(','));
+        },
     });
 </script>
 
@@ -35,13 +82,14 @@
         </select>
     </div>
     <div class="form-row">
-        <label for="node-input-serialNumbers"><i class="fa fa-microchip"></i> Devices</label>
-        <input type="text" id="node-input-serialNumbers" placeholder="Serial numbers, comma-separated (blank = all)">
+        <label style="vertical-align:top;margin-top:4px"><i class="fa fa-microchip"></i> Devices</label>
+        <div id="airthings-device-list" style="display:inline-block;vertical-align:top"></div>
+        <input type="hidden" id="node-input-serialNumbers">
     </div>
 </script>
 
 <script type="text/html" data-help-name="airthings-sensors">
-    <p>Fetches the latest sensor readings from one or more Airthings devices.</p>
+    <p>Fetches the latest sensor readings from your Airthings devices.</p>
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt>payload <span class="property-type">any</span></dt>
@@ -49,14 +97,13 @@
         <dt class="optional">unit <span class="property-type">string</span></dt>
         <dd>Override unit system: <code>metric</code> or <code>imperial</code>.</dd>
         <dt class="optional">serialNumbers <span class="property-type">string[]</span></dt>
-        <dd>Array of device serial numbers to filter. Overrides the node setting.</dd>
+        <dd>Array of serial numbers to fetch. Overrides the node setting.</dd>
     </dl>
     <h3>Outputs</h3>
     <dl class="message-properties">
         <dt>payload <span class="property-type">object</span></dt>
-        <dd>A flat object keyed by serial number. Each entry has <code>sensors</code> (key/value pairs), <code>recorded</code>, and <code>batteryPercentage</code>.</dd>
+        <dd>A flat object keyed by serial number:</dd>
     </dl>
-    <p>Example output:</p>
     <pre>{
   "2930001150": {
     "sensors": { "co2": 642, "temp": 27.4, "humidity": 51 },
@@ -65,6 +112,6 @@
   },
   "2960000310": { "error": "API error (504)..." }
 }</pre>
-    <p>Use a <b>Switch</b> node on <code>msg.payload["YOUR_SN"].sensors.temp</code> to route on a specific sensor value.
+    <p>Use a <b>Switch</b> node on <code>msg.payload["YOUR_SN"].sensors.temp</code> to route based on a specific sensor value.
     Devices that fail individually are included with an <code>error</code> key rather than stopping the whole fetch.</p>
 </script>
