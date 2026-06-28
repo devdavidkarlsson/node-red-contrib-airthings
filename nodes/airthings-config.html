@@ -36,8 +36,9 @@
                     btn.prop('disabled', false);
                 }
 
-                // If the secret field is empty, the node is already saved — test via the deployed node
-                if (!clientSecret && nodeId) {
+                // Prefer the deployed node path when the node exists — the secret field in the browser
+                // contains only Node-RED's credential placeholder, not the real value
+                if (nodeId) {
                     $.ajax({
                         url: '/airthings/test-node?configId=' + encodeURIComponent(nodeId),
                         type: 'GET',
