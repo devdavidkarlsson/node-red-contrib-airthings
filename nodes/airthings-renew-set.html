@@ -1,0 +1,85 @@
+<script type="text/javascript">
+    RED.nodes.registerType('airthings-renew-set', {
+        category: 'Airthings',
+        color: '#5bb5db',
+        defaults: {
+            name: { value: '' },
+            configNode: { value: '', type: 'airthings-config', required: true },
+            serialNumber: { value: '' },
+            mode: { value: 'AUTO' },
+            fanSpeed: { value: 3 },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-sliders',
+        label: function() {
+            return this.name || 'renew set mode';
+        },
+        paletteLabel: 'renew set mode',
+        oneditprepare: function() {
+            function toggleFanSpeed() {
+                const mode = $('#node-input-mode').val();
+                $('#fan-speed-row').toggle(mode === 'MANUAL');
+            }
+            $('#node-input-mode').on('change', toggleFanSpeed);
+            toggleFanSpeed();
+        },
+    });
+</script>
+
+<script type="text/html" data-template-name="airthings-renew-set">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-configNode"><i class="fa fa-cog"></i> Config</label>
+        <input type="text" id="node-input-configNode">
+    </div>
+    <div class="form-row">
+        <label for="node-input-serialNumber"><i class="fa fa-microchip"></i> Serial No.</label>
+        <input type="text" id="node-input-serialNumber" placeholder="Device serial number">
+    </div>
+    <div class="form-row">
+        <label for="node-input-mode"><i class="fa fa-power-off"></i> Mode</label>
+        <select id="node-input-mode" style="width:70%">
+            <option value="AUTO">AUTO — adjusts fan speed based on air quality</option>
+            <option value="OFF">OFF — turn off</option>
+            <option value="SLEEP">SLEEP — quiet 8-hour low speed</option>
+            <option value="BOOST">BOOST — maximum speed for 60 minutes</option>
+            <option value="MANUAL">MANUAL — fixed fan speed</option>
+        </select>
+    </div>
+    <div class="form-row" id="fan-speed-row" style="display:none">
+        <label for="node-input-fanSpeed"><i class="fa fa-volume-up"></i> Fan Speed</label>
+        <input type="number" id="node-input-fanSpeed" min="1" max="5" style="width:70px"> <span style="color:#aaa">(1 = quietest, 5 = highest)</span>
+    </div>
+</script>
+
+<script type="text/html" data-help-name="airthings-renew-set">
+    <p>Sets the operational mode of a <strong>Renew (AP_1)</strong> air purifier. The command is sent asynchronously.</p>
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">string | object</span></dt>
+        <dd>
+            A mode string (<code>"AUTO"</code>, <code>"OFF"</code>, <code>"SLEEP"</code>, <code>"BOOST"</code>, <code>"MANUAL"</code>),
+            or an object <code>{ mode, fanSpeed }</code> where <code>fanSpeed</code> (1–5) is required for MANUAL mode.
+            If omitted, the node's configured defaults are used.
+        </dd>
+        <dt class="optional">serialNumber <span class="property-type">string</span></dt>
+        <dd>Device serial number. Overrides the node setting.</dd>
+    </dl>
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">object</span></dt>
+        <dd>Echoes the applied command: <code>{ mode }</code> or <code>{ mode, fanSpeed }</code> for MANUAL.</dd>
+    </dl>
+    <h3>Modes</h3>
+    <ul>
+        <li><b>OFF</b> — turn off the purifier</li>
+        <li><b>AUTO</b> — automatic fan speed based on built-in PM sensor</li>
+        <li><b>SLEEP</b> — quiet low speed for 8 hours (23 dB)</li>
+        <li><b>BOOST</b> — maximum speed for 60 minutes</li>
+        <li><b>MANUAL</b> — fixed fan speed 1–5</li>
+    </ul>
+</script>

@@ -1,0 +1,51 @@
+<script type="text/javascript">
+    RED.nodes.registerType('airthings-renew-get', {
+        category: 'Airthings',
+        color: '#5bb5db',
+        defaults: {
+            name: { value: '' },
+            configNode: { value: '', type: 'airthings-config', required: true },
+            serialNumber: { value: '' },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-question-circle',
+        label: function() {
+            return this.name || 'renew get state';
+        },
+        paletteLabel: 'renew get state',
+    });
+</script>
+
+<script type="text/html" data-template-name="airthings-renew-get">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-configNode"><i class="fa fa-cog"></i> Config</label>
+        <input type="text" id="node-input-configNode">
+    </div>
+    <div class="form-row">
+        <label for="node-input-serialNumber"><i class="fa fa-microchip"></i> Serial No.</label>
+        <input type="text" id="node-input-serialNumber" placeholder="Device serial number">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="airthings-renew-get">
+    <p>Gets the last reported operational mode of a <strong>Renew (AP_1)</strong> air purifier.</p>
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">any</span></dt>
+        <dd>Any value triggers a fetch.</dd>
+        <dt class="optional">serialNumber <span class="property-type">string</span></dt>
+        <dd>Device serial number. Overrides the node setting.</dd>
+    </dl>
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">object</span></dt>
+        <dd>Current state: <code>{ mode }</code> or <code>{ mode, fanSpeed }</code> for MANUAL mode.</dd>
+    </dl>
+    <p>Possible modes: <code>OFF</code>, <code>AUTO</code>, <code>SLEEP</code>, <code>BOOST</code>, <code>MANUAL</code>.</p>
+    <p>Returns a 404 error if the device has never reported a state (hasn't synced yet).</p>
+</script>

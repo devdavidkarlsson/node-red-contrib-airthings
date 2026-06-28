@@ -1,0 +1,44 @@
+<script type="text/javascript">
+    RED.nodes.registerType('airthings-devices', {
+        category: 'Airthings',
+        color: '#5bb5db',
+        defaults: {
+            name: { value: '' },
+            configNode: { value: '', type: 'airthings-config', required: true },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-list',
+        label: function() {
+            return this.name || 'airthings devices';
+        },
+        paletteLabel: 'devices',
+    });
+</script>
+
+<script type="text/html" data-template-name="airthings-devices">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-configNode"><i class="fa fa-cog"></i> Config</label>
+        <input type="text" id="node-input-configNode">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="airthings-devices">
+    <p>Lists all devices connected to the Airthings account, including their sensor capabilities.</p>
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">any</span></dt>
+        <dd>Any value triggers a fetch.</dd>
+    </dl>
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">object</span></dt>
+        <dd>API response with a <code>devices</code> array. Each device has <code>serialNumber</code>, <code>name</code>,
+        <code>type</code>, <code>home</code>, and <code>sensors</code> (list of sensor type strings).</dd>
+    </dl>
+    <p>Use this node to discover serial numbers for the sensors and remote-control nodes.</p>
+</script>

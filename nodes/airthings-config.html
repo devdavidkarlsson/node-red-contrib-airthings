@@ -1,0 +1,42 @@
+<script type="text/javascript">
+    RED.nodes.registerType('airthings-config', {
+        category: 'config',
+        defaults: {
+            name: { value: '' },
+            accountId: { value: '' },
+        },
+        credentials: {
+            clientId: { type: 'text' },
+            clientSecret: { type: 'password' },
+        },
+        label: function() {
+            return this.name || 'Airthings';
+        },
+    });
+</script>
+
+<script type="text/html" data-template-name="airthings-config">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="Airthings">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-clientId"><i class="fa fa-key"></i> Client ID</label>
+        <input type="text" id="node-config-input-clientId" placeholder="Client ID">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-clientSecret"><i class="fa fa-lock"></i> Client Secret</label>
+        <input type="password" id="node-config-input-clientSecret" placeholder="Client Secret">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-accountId"><i class="fa fa-user"></i> Account ID</label>
+        <input type="text" id="node-config-input-accountId" placeholder="Optional — auto-detected if blank">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="airthings-config">
+    <p>Configuration node for the Airthings Consumer API.</p>
+    <p>Create an OAuth client at <a href="https://consumer-api-doc.airthings.com/dashboard" target="_blank">consumer-api-doc.airthings.com/dashboard</a>,
+    then paste the Client ID and Client Secret here.</p>
+    <p><strong>Account ID</strong> is optional — it will be auto-detected from your account if left blank.</p>
+</script>
