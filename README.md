@@ -1,5 +1,15 @@
 # node-red-contrib-airthings
 
+<p align="center">
+  <a href="https://buymeacoffee.com/airdavid">
+    <img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" height="41">
+  </a>
+</p>
+
+<p align="center"><em>Built and maintained independently. If this saves you time, a coffee keeps it alive.</em></p>
+
+---
+
 > **Your air quality data. Your automations. Zero cloud dependency.**
 
 Node-RED nodes for the [Airthings Consumer API](https://consumer-api-doc.airthings.com/) — poll sensor readings from your Airthings devices and control the Renew air purifier directly from your flows.
