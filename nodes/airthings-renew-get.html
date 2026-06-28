@@ -14,6 +14,68 @@
             return this.name || 'renew get state';
         },
         paletteLabel: 'renew get state',
+        oneditprepare: function() {
+            var node = this;
+
+            function authHeaders() {
+                var tokens = RED.settings.get('auth-tokens');
+                return tokens ? { 'Authorization': 'Bearer ' + tokens.access_token } : {};
+            }
+
+            function loadDevices() {
+                var configId = $('#node-input-configNode').val();
+                var select = $('#node-input-serialNumber-select');
+                var hint = $('#airthings-renew-get-hint');
+
+                if (!configId || configId === '_ADD_') {
+                    select.empty().append('<option value="">Select a config node first</option>');
+                    return;
+                }
+
+                select.empty().append('<option value="">Loading...</option>');
+
+                $.ajax({
+                    url: '/airthings/devices?configId=' + encodeURIComponent(configId),
+                    type: 'GET',
+                    headers: authHeaders(),
+                    success: function(data) {
+                        var renewDevices = (data.devices || []).filter(function(d) {
+                            return d.type === 'AP_1';
+                        });
+
+                        select.empty();
+
+                        if (renewDevices.length === 0) {
+                            select.append('<option value="">No Renew devices found</option>');
+                            hint.show();
+                            return;
+                        }
+
+                        hint.hide();
+                        renewDevices.forEach(function(d) {
+                            var label = d.name + ' (' + d.serialNumber + ')';
+                            var selected = d.serialNumber === node.serialNumber ? 'selected' : '';
+                            select.append('<option value="' + d.serialNumber + '" ' + selected + '>' + label + '</option>');
+                        });
+
+                        // Fall back to stored value if not in list
+                        if (node.serialNumber && !select.find('option[value="' + node.serialNumber + '"]').length) {
+                            select.append('<option value="' + node.serialNumber + '" selected>' + node.serialNumber + ' (manual)</option>');
+                        }
+                    },
+                    error: function() {
+                        select.empty().append('<option value="">Could not load devices</option>');
+                        hint.show();
+                    }
+                });
+            }
+
+            setTimeout(loadDevices, 100);
+            $('#node-input-configNode').on('change', loadDevices);
+        },
+        oneditsave: function() {
+            $('#node-input-serialNumber').val($('#node-input-serialNumber-select').val() || '');
+        },
     });
 </script>
 
@@ -27,13 +89,18 @@
         <input type="text" id="node-input-configNode">
     </div>
     <div class="form-row">
-        <label for="node-input-serialNumber"><i class="fa fa-microchip"></i> Serial No.</label>
-        <input type="text" id="node-input-serialNumber" placeholder="Device serial number">
+        <label for="node-input-serialNumber-select"><i class="fa fa-wind"></i> Device</label>
+        <select id="node-input-serialNumber-select" style="width:70%"></select>
     </div>
+    <div class="form-row" id="airthings-renew-get-hint" style="display:none">
+        <label></label>
+        <span style="color:#aaa;font-size:0.9em">Or set <code>msg.serialNumber</code> at runtime.</span>
+    </div>
+    <input type="hidden" id="node-input-serialNumber">
 </script>
 
 <script type="text/html" data-help-name="airthings-renew-get">
-    <p>Gets the last reported operational mode of a <strong>Renew (AP_1)</strong> air purifier.</p>
+    <p>Gets the last reported mode of a <strong>Renew (AP_1)</strong> air purifier.</p>
     <h3>Inputs</h3>
     <dl class="message-properties">
         <dt>payload <span class="property-type">any</span></dt>
@@ -44,8 +111,7 @@
     <h3>Outputs</h3>
     <dl class="message-properties">
         <dt>payload <span class="property-type">object</span></dt>
-        <dd>Current state: <code>{ mode }</code> or <code>{ mode, fanSpeed }</code> for MANUAL mode.</dd>
+        <dd><code>{ mode }</code> or <code>{ mode, fanSpeed }</code> for MANUAL mode.</dd>
     </dl>
     <p>Possible modes: <code>OFF</code>, <code>AUTO</code>, <code>SLEEP</code>, <code>BOOST</code>, <code>MANUAL</code>.</p>
-    <p>Returns a 404 error if the device has never reported a state (hasn't synced yet).</p>
 </script>
